@@ -1,14 +1,8 @@
 # Victor Forbes - 9293394
 
-ifdef case
-	in = < TestCases/$(case).in
-endif
-
 all:
-	gcc -o main src/*.c -I./includes
-debug:
-	gcc -o main src/*.c -I./includes -g -Wall
+	gcc src/*.c -I include/ -o main -g -Wall
 run:
-	./main $(in)
-fullrun:
-	valgrind -v --track-origins=yes --leak-check=full ./main $(in)
+	./main
+debug:
+	valgrind -v --leak-check=full --track-origins=yes --show-leak-kinds=all ./main

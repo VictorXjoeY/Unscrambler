@@ -1,70 +1,68 @@
+/* Victor Forbes - 9293394 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "MyUtils.h"
-#include "MyTrie.h"
-#include "MyUnscrambler.h"
+#include "trie.h"
 
-#include <time.h>
+int compare(const void *a, const void *b){
+	int len_a, len_b;
 
-int main(int argc, char *argv[]){
-	FILE *fp = fopen("Dictionary.txt", "r"); // Opening the dictionary.
-	Trie *t = createTrie();
-	ScrambledWord *sw;
-	char *word;
-	int i, n;
+	len_a = strlen(*(char **)a);
+	len_b = strlen(*(char **)b);
 
-	double generateTrieTime, printTrieTime, unscrambleTime;
-	clock_t start, end;
-	start = clock();
-
-	// Reading number of words.
-	fscanf(fp, "%d%*c", &n);
-
-	// Reading each word from the disk and inserting in the Trie.
-	for (i = 0; i < n; i++){
-		word = readStretch(fp);
-		insertWord(t, word);
-		free(word);
+	if (len_a == len_b){
+		return strcmp(*(char **)a, *(char **)b);
 	}
 
-	// Closing the file.
+	return len_a - len_b;
+}
+
+int main(int argc, char *argv[]){
+	char *str, **ans;
+	int n, i;
+	FILE *fp;
+	Trie *t;
+
+	t = trie_create();
+
+	printf("Inserting dictionary...\n");
+
+	// Inserting the entire dictionary.
+	fp = fopen("dictionary.txt", "r");
+
+	while (fscanf(fp, " %ms", &str) != EOF){
+		trie_insert(t, str);
+		free(str);
+	}
+
 	fclose(fp);
 
-	end = clock();
-	generateTrieTime = (double)(end - start) / CLOCKS_PER_SEC;
+	printf("Dictionary inserted!\n");
+	
+	// Reading scrambled word.
+	printf("Unscramble: ");
+	scanf(" %ms", &str);
 
-	start = clock();
+	// Unscrambling.
+	printf("Unscrambling %s...\n", str);
+	unscramble(t, str, &ans, &n);
+	free(str);
 
-	// Printing the Trie. Each character is a tree node.
-	printTrie(t);
+	// Sorting solutions.
+	qsort(ans, n, sizeof(char *), compare);
 
-	end = clock();
-	printTrieTime = (double)(end - start) / CLOCKS_PER_SEC;
+	// Printing solutions.
+	printf("Unscrambled! Found %d words:\n", n);
 
-	// Reading the scrambled word and organizing it to make it
-	// easier to process.
-	printf("Word to be unscrambled: ");
-	word = readStretch(stdin);
-	sw = createScrambledWord(word);
-	free(word);
+	for (i = 0; i < n; i++){
+		printf("%s\n", ans[i]);
+		free(ans[i]);
+	}
 
-	start = clock();
+	free(ans);
 
-	// Generating all the possible words that could be written
-	// using the characters in the scrambled word.
-	unscramble(t, sw);
-
-	end = clock();
-	unscrambleTime = (double)(end - start) / CLOCKS_PER_SEC;
-
-	printf("Time it took to generate the Trie: %.3lf\n", generateTrieTime);
-	printf("Time it took to print the Trie: %.3lf\n", printTrieTime);
-	printf("Time it took to unscramble the word: %.3lf\n", unscrambleTime);
-
-	// Freeing allocated memory.
-	eraseScrambledWord(sw);
-	eraseTrie(t);
+	trie_destroy(t);
 
 	return 0;
 }
